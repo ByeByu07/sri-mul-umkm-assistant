@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
 import { betterFetch } from '@better-fetch/fetch'
 
 type Session = typeof auth.$Infer.Session;
 
-// This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
 
     const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
@@ -24,8 +22,9 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next()
 }
- 
+
 // See "Matching Paths" below to learn more
 export const config = {
     matcher: '/dashboard/:path*',
+	// matcher: '/((?!api|_next/static|_next/image|favicon.ico).*)',
 }

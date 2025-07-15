@@ -7,6 +7,11 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
+		"db:create:migration": "npx wrangler d1 migrations create your-database-name",
+		"db:migrate:remote": "npx wrangler d1 migrations apply your-database-name --remote && npm run codegen",
+		"db:migrate:local": "npx wrangler d1 migrations apply your-database-name --local && npm run codegen",
+		"cf:secret:bulk": "wrangler secret bulk .env.secret",
+		"codegen": "npx kysely-codegen",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
@@ -33,11 +38,12 @@
 		"@tabler/icons-react": "^3.34.0",
 		"@tanstack/react-table": "^8.21.3",
 		"better-auth": "^1.2.9",
-		"better-sqlite3": "^11.10.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
-		"drizzle-orm": "^0.44.2",
+		"drizzle-kit": "^0.31.4",
+		"drizzle-orm": "^0.44.3",
 		"kysely": "^0.28.2",
+		"kysely-codegen": "^0.18.5",
 		"kysely-d1": "^0.4.0",
 		"lucide-react": "^0.518.0",
 		"negotiator": "^1.0.0",
@@ -60,12 +66,16 @@
 		"@types/node": "^20.19.1",
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
-		"drizzle-kit": "^0.31.1",
 		"eslint": "^9",
 		"eslint-config-next": "15.3.3",
 		"tailwindcss": "^4",
 		"tw-animate-css": "^1.3.4",
 		"typescript": "^5",
 		"wrangler": "^4.20.3"
+	},
+	"overrides": {
+		"kysely-codegen": {
+			"better-sqlite3": "^12.2.0"
+		}
 	}
 }

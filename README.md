@@ -16,3 +16,7 @@ tech stack:
 - d1-dialect
 - shadcn/ui
 - simple icons
+
+
+overrides:
+- kysely-codegen conflict with better-sqlite3 (use version ^12.2.0)

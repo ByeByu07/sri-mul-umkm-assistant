@@ -34,9 +34,9 @@
 	"d1_databases": [
         {
             "binding": "DB",
-            "database_name": "my_database",
-            "database_id": "d6e9ac9a-0922-4ae9-a4c5-2065827acef7",
-			"migrations_dir": "better-auth_migrations"
+            "database_name": "your-database-name",
+            "database_id": "your-database-id",
+			"migrations_dir": "drizzle"
         }
     ]
 	/**

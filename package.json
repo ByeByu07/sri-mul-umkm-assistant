@@ -46,6 +46,7 @@
 		"kysely-codegen": "^0.18.5",
 		"kysely-d1": "^0.4.0",
 		"lucide-react": "^0.518.0",
+		"midtrans-client": "^1.4.3",
 		"negotiator": "^1.0.0",
 		"next": "15.3.3",
 		"next-intl": "^4.1.0",

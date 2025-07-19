@@ -15,29 +15,33 @@ This is my saas template starter only use in cloudflare environment, use nextjs 
 
 ## How to use
 - clone this repository
-- change the **migrations_dir** in **wrangler.jsonc** to better-auth_migrations first.
+- see the schema in **drizzle/schema.ts**, that the schema setup with initial for better-auth.
+- then :
+```bash
+npx drizzle-kit generate
+```
 - migrate better-auth to local and remote
 ``` bash
 npm run db:migrate local
 npm run db:migrate remote
 ```
-- uncomment in **drizzle.config.ts** and fill the dbCredentials.
-- pull the schema from cf to your project.
-```bash
-npx drizzle-kit pull
-```
-- then u can know changes the schema in **drizzle/schema.ts**
-- after changes schema generated schema with
+- after changes schema, generated schema with
 ```bash
 npx drizzle-kit generate
 ```
-- then migrate that to your local and remote.
+- don't forgot to generate type with kysely-codegen
+```bash
+npm run codegen
+```
+> [!WARNING] 
+> change the --url argument first in package.json.
+
+--- 
 
 > [!NOTE] 
-> the type will auto-generated with kysely-codegen after your migrate.
+> if u want to use plugin from better-auth, add schema manually then generate and migrate.
 
-> [!WARNING] 
-> remove the better-auth_migrations after the setup.
+---
 
 ### migrate database
 - npm run db:migrate:local

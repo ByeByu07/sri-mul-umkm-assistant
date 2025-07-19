@@ -1,17 +1,18 @@
 {
 	"name": "template-saas-starter",
-	"version": "0.1.0",
+	"version": "2.0.0",
 	"private": true,
 	"scripts": {
 		"dev": "next dev --turbopack",
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
+		"dk:g": "npx drizzle-kit generate --config=./drizzle.config.ts",
 		"db:create:migration": "npx wrangler d1 migrations create your-database-name",
 		"db:migrate:remote": "npx wrangler d1 migrations apply your-database-name --remote && npm run codegen",
 		"db:migrate:local": "npx wrangler d1 migrations apply your-database-name --local && npm run codegen",
 		"cf:secret:bulk": "wrangler secret bulk .env.secret",
-		"codegen": "npx kysely-codegen",
+		"codegen": "npx kysely-codegen --url .wrangler/state/v3/d1/miniflare-D1DatabaseObject/{DATABASE_NAME}.sqlite",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"

@@ -6,6 +6,8 @@ This is my saas template starter only use in cloudflare environment, use nextjs 
 - typescript
 - better-auth
 - kysely
+- kysely-codegen
+- kysely-d1
 - opennextjs-cloudflare
 - d1
 - shadcn/ui
@@ -89,4 +91,9 @@ npm run dev
 ``` bash
 npm run cf:secret:bulk
 ```
+
+# Claude Code Instructions
+- use kysely to query database
+- drizzle orm just to handle migration
+
 

@@ -1,47 +1,47 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, boolean, timestamp, uuid } from "drizzle-orm/pg-core";
 
-export const user = sqliteTable("user", {
-    id: text('id').primaryKey(),
+export const user = pgTable("user", {
+    id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     email: text('email').notNull().unique(),
-    emailVerified: integer('email_verified', { mode: 'boolean' }).$defaultFn(() => false).notNull(),
+    emailVerified: boolean('emailVerified').default(false).notNull(),
     image: text('image'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()).notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()).notNull()
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
 });
 
-export const session = sqliteTable("session", {
-    id: text('id').primaryKey(),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+export const session = pgTable("session", {
+    id: uuid('id').primaryKey().defaultRandom(),
+    expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
     token: text('token').notNull().unique(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
-    ipAddress: text('ip_address'),
-    userAgent: text('user_agent'),
-    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' })
+    createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull(),
+    ipAddress: text('ipAddress'),
+    userAgent: text('userAgent'),
+    userId: uuid('userId').notNull().references(() => user.id, { onDelete: 'cascade' })
 });
 
-export const account = sqliteTable("account", {
-    id: text('id').primaryKey(),
-    accountId: text('account_id').notNull(),
-    providerId: text('provider_id').notNull(),
-    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-    accessToken: text('access_token'),
-    refreshToken: text('refresh_token'),
-    idToken: text('id_token'),
-    accessTokenExpiresAt: integer('access_token_expires_at', { mode: 'timestamp' }),
-    refreshTokenExpiresAt: integer('refresh_token_expires_at', { mode: 'timestamp' }),
+export const account = pgTable("account", {
+    id: uuid('id').primaryKey().defaultRandom(),
+    accountId: text('accountId').notNull(),
+    providerId: text('providerId').notNull(),
+    userId: uuid('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    accessToken: text('accessToken'),
+    refreshToken: text('refreshToken'),
+    idToken: text('idToken'),
+    accessTokenExpiresAt: timestamp('accessTokenExpiresAt', { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt', { withTimezone: true }),
     scope: text('scope'),
     password: text('password'),
-    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull()
+    createdAt: timestamp('createdAt', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull()
 });
 
-export const verification = sqliteTable("verification", {
-    id: text('id').primaryKey(),
+export const verification = pgTable("verification", {
+    id: uuid('id').primaryKey().defaultRandom(),
     identifier: text('identifier').notNull(),
     value: text('value').notNull(),
-    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => /* @__PURE__ */ new Date())
+    expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow()
 });

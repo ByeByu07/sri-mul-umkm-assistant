@@ -1,25 +1,9 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 
-import { D1Dialect } from "kysely-d1";
-import { Kysely } from "kysely";
-import { DB } from "kysely-codegen"
-
-async function initDbConnectionDev() {
-  const { env } = await getCloudflareContext({ async: true });
-  return new D1Dialect({
-    database: (env as { DB: D1Database }).DB,
-  });
+if (!process.env.POSTGRES_URL) {
+  throw new Error('POSTGRES_URL is not defined');
 }
 
-function initDbConnection() {
-  return new D1Dialect({
-    database: process.env.DB,
-  });
-}
-
-export const db = new Kysely<DB>({
-  dialect:
-    process.env.NODE_ENV === "production"
-      ? initDbConnection()
-      : await initDbConnectionDev(),
-});
+const client = postgres(process.env.POSTGRES_URL);
+export const db = drizzle({ client });

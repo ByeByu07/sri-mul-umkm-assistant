@@ -26,7 +26,7 @@ export function SigninForm({
     authClient.signIn.email({
       email: email,
       password: password,
-      callbackURL: "/dashboard",
+      callbackURL: "/",
     }, {
       onRequest: () => {
         

@@ -1,5 +1,8 @@
 // drizzle.config.ts
 import { defineConfig } from "drizzle-kit";
+import { config } from "dotenv";
+
+config({ path: ".env.local" });
 
 if (!process.env.POSTGRES_URL) {
   throw new Error('POSTGRES_URL is not defined');

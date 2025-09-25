@@ -47,9 +47,9 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
   const handleCopyLink = async (link: string) => {
     try {
       await navigator.clipboard.writeText(link);
-      toast('Payment link copied to clipboard!');
+      toast('Link pembayaran berhasil disalin ke clipboard!');
     } catch (err) {
-      toast('Failed to copy link');
+      toast('Gagal menyalin link');
     }
   };
 
@@ -84,9 +84,9 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
               <CreditCard className="w-4 h-4 text-red-600" />
             </div>
             <div>
-              <CardTitle className="text-red-800 text-sm">Payment Creation Failed</CardTitle>
+              <CardTitle className="text-red-800 text-sm">Gagal Membuat Pembayaran</CardTitle>
               <CardDescription className="text-red-600 text-xs">
-                Unable to create payment link
+                Tidak dapat membuat link pembayaran
               </CardDescription>
             </div>
           </div>
@@ -94,12 +94,12 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
         <CardContent>
           <div className="space-y-3">
             <div className="p-3 bg-red-100 rounded-md border-l-4 border-red-500">
-              <p className="text-red-700 text-xs font-medium">Error Details:</p>
+              <p className="text-red-700 text-xs font-medium">Detail Kesalahan:</p>
               <p className="text-red-600 text-xs mt-1">{error}</p>
             </div>
 
             <div className="text-xs text-red-600">
-              Please check your input and try again, or contact support if the issue persists.
+              Silakan periksa input Anda dan coba lagi, atau hubungi dukungan jika masalah terus berlanjut.
             </div>
           </div>
         </CardContent>
@@ -111,7 +111,7 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
     return (
       <Card className="w-full max-w-md">
         <CardContent className="pt-6">
-          <p className="text-sm text-muted-foreground">No payment data available</p>
+          <p className="text-sm text-muted-foreground">Tidak ada data pembayaran yang tersedia</p>
         </CardContent>
       </Card>
     );
@@ -125,9 +125,9 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
             <CreditCard className="w-4 h-4 text-green-600" />
           </div>
           <div>
-            <CardTitle className="text-green-800 text-sm">Payment Link Created</CardTitle>
+            <CardTitle className="text-green-800 text-sm">Link Pembayaran Berhasil Dibuat</CardTitle>
             <CardDescription className="text-green-600 text-xs">
-              Ready to accept payment
+              Siap menerima pembayaran
             </CardDescription>
           </div>
         </div>
@@ -146,25 +146,25 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
                 <h4 className="font-medium text-sm">{paymentData.productName}</h4>
               </div>
               <Badge variant={paymentData.type === 'product' ? 'default' : 'secondary'} className="text-xs">
-                {paymentData.type === 'product' ? 'Product' : 'Service'}
+                {paymentData.type === 'product' ? 'Produk' : 'Layanan'}
               </Badge>
             </div>
 
             <div className="space-y-1 text-xs text-muted-foreground">
               <div className="flex justify-between">
-                <span>Order ID:</span>
+                <span>ID Pesanan:</span>
                 <span className="font-mono">{paymentData.orderId}</span>
               </div>
               <div className="flex justify-between">
-                <span>Quantity:</span>
+                <span>Kuantitas:</span>
                 <span>{paymentData.quantity}</span>
               </div>
               <div className="flex justify-between">
-                <span>Unit Price:</span>
+                <span>Harga Satuan:</span>
                 <span>Rp {paymentData.unitPrice.toLocaleString('id-ID')}</span>
               </div>
               <div className="flex justify-between font-medium text-sm text-foreground border-t pt-1 mt-2">
-                <span>Total Amount:</span>
+                <span>Total Jumlah:</span>
                 <span>Rp {paymentData.amount.toLocaleString('id-ID')}</span>
               </div>
             </div>
@@ -172,7 +172,7 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
             {paymentData.description && (
               <div className="mt-2 pt-2 border-t border-green-100">
                 <p className="text-xs text-muted-foreground">
-                  <strong>Description:</strong> {paymentData.description}
+                  <strong>Deskripsi:</strong> {paymentData.description}
                 </p>
               </div>
             )}
@@ -186,7 +186,7 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
               size="sm"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Open Payment Page
+              Buka Halaman Pembayaran
             </Button>
 
             <Button
@@ -196,7 +196,7 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
               size="sm"
             >
               <Copy className="w-4 h-4 mr-2" />
-              Copy Payment Link
+              Salin Link Pembayaran
             </Button>
             <Button
               onClick={() => handleCheckPaymentStatus()}
@@ -205,7 +205,7 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
               size="sm"
             >
               <Check className="w-4 h-4 mr-2" />
-              Check Payment Status
+              Cek Status Pembayaran
             </Button>
           </div>
 
@@ -218,14 +218,14 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
 
           {/* Instructions */}
           <div className="text-xs text-muted-foreground bg-white p-3 rounded-md border border-green-200">
-            <p className="font-medium mb-1">How to use this payment link:</p>
+            <p className="font-medium mb-1">Cara menggunakan link pembayaran ini:</p>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Share the link with your customer</li>
-              <li>Customer clicks the link to access payment page</li>
-              <li>Customer completes payment via various methods</li>
-              <li>You'll receive notification once payment is confirmed</li>
+              <li>Bagikan link kepada pelanggan Anda</li>
+              <li>Pelanggan mengklik link untuk mengakses halaman pembayaran</li>
+              <li>Pelanggan menyelesaikan pembayaran melalui berbagai metode</li>
+              <li>Anda akan menerima notifikasi setelah pembayaran dikonfirmasi</li>
               {paymentData.type === 'product' && (
-                <li>Product stock will be automatically updated</li>
+                <li>Stok produk akan diperbarui secara otomatis</li>
               )}
             </ol>
           </div>
@@ -234,9 +234,6 @@ export function CreatePaymentLink({ success, paymentData, message, error }: Crea
             <Badge variant="outline" className="text-xs">
               Status: {paymentData.status}
             </Badge>
-            <span className="text-xs text-muted-foreground">
-              Powered by Midtrans
-            </span>
           </div>
         </div>
       </CardContent>

@@ -22,6 +22,27 @@
       "when": 1758711842232,
       "tag": "0002_warm_zodiak",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1758816691030,
+      "tag": "0003_chunky_speed",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758873784686,
+      "tag": "0004_white_invaders",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1758891857917,
+      "tag": "0005_mighty_zombie",
+      "breakpoints": true
     }
   ]
 }

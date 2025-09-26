@@ -15,9 +15,8 @@ import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Image from "next/image";
-import { SparklesText } from "@/components/ui/sparkles-text";
 import { FcGoogle } from "react-icons/fc";
+import { SparklesText } from "./ui/sparkles-text";
 
 interface AuthModalProps {
   open: boolean;
@@ -149,171 +148,148 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="text-center text-2xl font-bold flex items-center justify-center">
-            <SparklesText className="text-3xl font-semibold">SRI MUL</SparklesText>
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-sm p-0 border-muted shadow-md">
+        <div className="flex flex-col items-center gap-y-8 px-6 py-12">
+          {/* Logo Section */}
+          <div className="flex flex-col items-center gap-y-2">
+            <div className="flex items-center gap-1">
+              <SparklesText className="text-3xl font-semibold font-[Lilita_One] text-[#fb8500]">SRI MUL</SparklesText>
+            </div>
+          </div>
 
-        <Tabs defaultValue="signin" className="w-full px-3">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Masuk</TabsTrigger>
-            <TabsTrigger value="signup">Daftar</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="signin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="signin">Masuk</TabsTrigger>
+              <TabsTrigger value="signup">Daftar</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="signin" className="px-6 pb-6">
-            <Card className="border-0 shadow-none">
-              <CardContent className="p-0">
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900">Masuk ke Akun Anda</h3>
-                    {/* <p className="text-sm text-gray-600 mt-1">
-                      Kelola bisnis UMKM berasa lebih mudah dengan Sri Mul UMKM
-                    </p> */}
+            <TabsContent value="signin" className="mt-0">
+              <div className="flex w-full flex-col gap-8">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={signinEmail}
+                      onChange={(e) => setSigninEmail(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
                   </div>
-
-                  <div className="space-y-4">
-
-                    <div className="grid grid-cols-1 py-5">
-                      <Button variant="outline" type="button" onClick={signInWithGoogle} className="cursor-pointer">
-                        <FcGoogle />
-                        Google
-                      </Button>
-                    </div>
-
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          Atau
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
-                      <Input
-                        id="signin-email"
-                        type="email"
-                        placeholder="contoh@email.com"
-                        value={signinEmail}
-                        onChange={(e) => setSigninEmail(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
-                      <Input
-                        id="signin-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signinPassword}
-                        onChange={(e) => setSigninPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={signinPassword}
+                      onChange={(e) => setSigninPassword(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-4">
                     <Button
                       onClick={handleSignin}
-                      className="w-full"
+                      className="mt-2 w-full"
                       disabled={isLoading}
                     >
                       {isLoading ? "Masuk..." : "Masuk"}
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={signInWithGoogle}
+                      className="w-full"
+                      type="button"
+                    >
+                      <FcGoogle className="mr-2 size-5" />
+                      Masuk dengan Google
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">
+                    v{process.env.NEXT_PUBLIC_APP_VERSION}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="signup" className="px-6 pb-6">
-            <Card className="border-0 shadow-none">
-              <CardContent className="p-0">
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900">Buat Akun Baru</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Bergabunglah dan mulai kelola bisnis UMKM Anda
-                    </p>
+            <TabsContent value="signup" className="mt-0">
+              <div className="flex w-full flex-col gap-8">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Nama Lengkap"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
                   </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">Nama Lengkap</Label>
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="Nama Anda"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="contoh@email.com"
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Konfirmasi Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="email"
+                      placeholder="Email"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="password"
+                      placeholder="Password"
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      type="password"
+                      placeholder="Konfirmasi Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-4">
                     <Button
                       onClick={handleSignup}
-                      className="w-full"
+                      className="mt-2 w-full"
                       disabled={isLoading}
                     >
                       {isLoading ? "Mendaftar..." : "Daftar"}
                     </Button>
-
-                    <div className="text-center text-sm text-gray-600">
-                      Dengan mendaftar, Anda menyetujui{" "}
-                      <a href="#" className="text-primary hover:underline">
-                        Syarat & Ketentuan
-                      </a>{" "}
-                      dan{" "}
-                      <a href="#" className="text-primary hover:underline">
-                        Kebijakan Privasi
-                      </a>
-                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={signInWithGoogle}
+                      className="w-full"
+                      type="button"
+                    >
+                      <FcGoogle className="mr-2 size-5" />
+                      Daftar dengan Google
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">
+                    v{process.env.NEXT_PUBLIC_APP_VERSION}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+              {/* <div className="text-muted-foreground flex justify-center gap-1 text-sm mt-6">
+                <p>Dengan mendaftar, Anda menyetujui</p>
+                <a href="#" className="text-primary font-medium hover:underline">
+                  Syarat & Ketentuan
+                </a>
+                <p>dan</p>
+                <a href="#" className="text-primary font-medium hover:underline">
+                  Kebijakan Privasi
+                </a>
+              </div> */}
+            </TabsContent>
+          </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -123,7 +123,17 @@ export const transaction = pgTable("transaction", {
     updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
 });
 
-// Note: Chat functionality tables removed for now (not needed for MVP)
+// Chat History Tables
+export const chatSession = pgTable("chat_session", {
+    id: text('id').primaryKey(),
+    userId: text('userId').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    summary: text('summary'),
+    // Store complete UIMessage[] as JSON for proper persistence
+    messages: text('messages').notNull().default('[]'), // JSON stringified UIMessage[]
+    createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow().notNull()
+});
 
 // Inventory Tracking
 export const inventoryMovement = pgTable("inventory_movement", {
@@ -201,6 +211,7 @@ export const userRelations = relations(user, ({ many }) => ({
     transactions: many(transaction),
     categories: many(transactionCategory),
     midtransTransactions: many(midtransTransaction),
+    chatSessions: many(chatSession),
 }));
 
 export const productRelations = relations(product, ({ one, many }) => ({
@@ -237,5 +248,12 @@ export const midtransTransactionRelations = relations(midtransTransaction, ({ on
     product: one(product, {
         fields: [midtransTransaction.productId],
         references: [product.id]
+    })
+}));
+
+export const chatSessionRelations = relations(chatSession, ({ one }) => ({
+    user: one(user, {
+        fields: [chatSession.userId],
+        references: [user.id]
     })
 }));

@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       if (!foundProduct) {
         return NextResponse.json({
           success: false,
-          error: `Product "${name}" not found. Please check the product name or create the product first.`
+          error: `Produk "${name}" tidak ditemukan. Silahkan periksa nama produk atau buat produk terlebih dahulu.`
         }, { status: 404 });
       }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       if ((foundProduct.currentStock || 0) < quantity) {
         return NextResponse.json({
           success: false,
-          error: `Insufficient stock. Available: ${foundProduct.currentStock || 0}, Requested: ${quantity}`
+          error: `Stok tidak mencukupi. Tersedia: ${foundProduct.currentStock || 0}, Diminta: ${quantity}`
         }, { status: 400 });
       }
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       if (!price) {
         return NextResponse.json({
           success: false,
-          error: 'Price is required for transaction type payments'
+          error: 'Harga diperlukan untuk pembayaran transaksi'
         }, { status: 400 });
       }
       finalPrice = price * quantity;
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
         description: description || `Payment for ${name}`,
         status: 'pending'
       },
-      message: `Payment link created successfully for ${name}. Total amount: Rp ${finalPrice.toLocaleString('id-ID')}`
+      message: `Link pembayaran ${name} berhasil dibuat. Harga total: Rp ${finalPrice.toLocaleString('id-ID')}`
     });
 
   } catch (error) {

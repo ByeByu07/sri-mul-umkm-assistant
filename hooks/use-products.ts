@@ -63,7 +63,7 @@ export const useRefreshProducts = () => {
     try {
       await queryClient.invalidateQueries({ queryKey: ['products'] });
       await queryClient.refetchQueries({ queryKey: ['products'] });
-      toast.success('Products refreshed successfully!');
+      // toast.success('Products refreshed successfully!');
     } catch (error) {
       toast.error('Failed to refresh products');
     }

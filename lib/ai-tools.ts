@@ -1,4 +1,4 @@
-import { tool as createTool, ToolCallOptions } from 'ai';
+import { tool as createTool, Tool, ToolCallOptions } from 'ai';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { product, transaction, transactionCategory, midtransTransaction } from '@/drizzle/schema';
@@ -1051,17 +1051,18 @@ export const checkPaymentMidtrans = createTool({
 //     }
 // })
 
+
 export const tools = {
-    addProduct: addProductTool,
-    deleteProduct: deleteProductTool,
-    updateProduct: updateProductTool,
-    listProduct: listProductTool,
-    getDailySales: getDailySalesTool,
-    getMonthlySales: getMonthlySalesTool,
-    compareMonthlySales: compareMonthlySalesTool,
-    getTotalRevenue: getTotalRevenueTool,
-    recordTransaction: recordTransactionTool,
-    listTransaction: listTransactionTool,
-    createPaymentLink: makePaymentMidtrans,
-    checkPaymentStatus: checkPaymentMidtrans
-}
+    addProduct: addProductTool as Tool,
+    deleteProduct: deleteProductTool as Tool,
+    updateProduct: updateProductTool as Tool,
+    listProduct: listProductTool as Tool,
+    getDailySales: getDailySalesTool as Tool,
+    getMonthlySales: getMonthlySalesTool as Tool,
+    compareMonthlySales: compareMonthlySalesTool as Tool,
+    getTotalRevenue: getTotalRevenueTool as Tool,
+    recordTransaction: recordTransactionTool as Tool,
+    listTransaction: listTransactionTool as Tool,
+    createPaymentLink: makePaymentMidtrans as Tool,
+    checkPaymentStatus: checkPaymentMidtrans as Tool
+} satisfies Record<string, Tool<any, any>>;

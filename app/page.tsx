@@ -45,7 +45,9 @@ import {
   TrendingUp,
   Plus,
   Search,
-  Menu
+  Menu,
+  MessageCircle,
+  Package2
 } from 'lucide-react';
 import {
   Source,
@@ -87,8 +89,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { DotPattern } from '@/components/ui/dot-pattern';
 import { cn } from '@/lib/utils';
-import { ToolUIPart } from 'ai';
+import { DefaultChatTransport, generateId, ToolUIPart, UIMessage, validateUIMessages } from 'ai';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import { useProductsWithFormattedPrices, useRefreshProducts } from '@/hooks/use-products';
 import { RefreshCw } from 'lucide-react';
 import { Spinner } from '@/components/ui/shadcn-io/spinner';
@@ -107,6 +110,21 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { IconCreditCard, IconLogout, IconNotification, IconUserCircle } from '@tabler/icons-react';
 import { AuthModal } from '@/components/auth-modal';
 import { CheckPaymentStatus } from '@/components/chatbot-messages/check-payment-status';
+import { ToolWrapper } from '@/components/chatbot-messages/tool-wrapper';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMicrophone } from '@/hooks/use-microphone';
+
+// New modular components
+import { ProductSidebar } from '@/components/sidebar/ProductSidebar';
+import { ChatSidebar } from '@/components/sidebar/ChatSidebar';
+import { UserProfileDropdown } from '@/components/common/UserProfileDropdown';
+import { ConversationArea } from '@/components/chat/ConversationArea';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { AuthenticationWrapper } from '@/components/auth/AuthenticationWrapper';
+import { MobileHeader } from '@/components/common/MobileHeader';
+import { useChatHistory } from '@/hooks/use-chat-history';
+import { tools } from '@/lib/ai-tools';
+import { useUIState } from '@ai-sdk/rsc';
 
 const models = [
   {
@@ -121,45 +139,83 @@ const models = [
 
 const suggestions = [
   'Kamu bisa ngapain aja',
+  'Bisa bantu tambah produk',
+  'Bisa bantu list produk',
+  'Buatkan link pembayaran untuk produk saya',
   'Penjualan Hari Ini',
   'Penjualan Bulan Ini',
-  'Buatkan link pembayaran untuk produk saya',
   'Total Pendapatan hingga Hari Ini',
   'Bantu hitung HPP',
-]
+];
+
+const sidebarTabs = [
+  {
+    name: 'Produk',
+    value: 'produk',
+    icon: Package2
+  },
+  {
+    name: 'Chat',
+    value: 'chat',
+    icon: MessageCircle
+  },
+];
 
 const ChatBot = () => {
   const [input, setInput] = useState('');
   const [model, setModel] = useState<string>(models[0].value);
-  const [useMicrophone, setUseMicrophone] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { messages, sendMessage, status, error } = useChat();
+  const [activeTab, setActiveTab] = useState('produk');
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+
+  // Initialize useChat with proper messages
+  const { messages, sendMessage, status, stop } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+    }),
+    messages: initialMessages,
+    id: currentChatId || undefined,
+    onFinish: async (message) => {
+      // Auto-save is now handled by the API route onFinish callback
+      console.log('Chat response completed');
+    },
+    onError: (error) => {
+      toast(error.message);
+    }
+  });
+
   const { data: session, isPending } = authClient.useSession();
 
-  // TanStack Query hooks
-  const { data: products, isLoading, isError, error: productsError } = useProductsWithFormattedPrices();
-  const refreshProducts = useRefreshProducts();
-
-  // Manual refresh function for external use
-  const handleManualRefresh = async () => {
-    await refreshProducts();
-  };
-
-  // Expose refresh function globally for debugging/testing
-  // React.useEffect(() => {
-  //   (window as any).refreshProducts = handleManualRefresh;
-  //   return () => {
-  //     delete (window as any).refreshProducts;
-  //   };
-  // }, []);
+  // Chat history management
+  const {
+    chatSessions,
+    currentSession,
+    isLoading: chatHistoryLoading,
+    error: chatHistoryError,
+    loadChatSession,
+    saveChatSession,
+    createNewChat,
+    refreshChatSessions,
+    deleteChatSession,
+    renameTitleChatSession,
+    summaryWithAIChatSession,
+  } = useChatHistory();
 
   React.useEffect(() => {
-    (window as any).sendMessage = sendMessage;
-    return () => {
-      delete (window as any).sendMessage;
-    };
-  }, []);
+    console.log(messages);
+  }, [messages]);
+
+  // TanStack Query hooks
+  const refreshProducts = useRefreshProducts();
+
+  // React.useEffect(() => {
+  //   (window as any).sendMessage = sendUserMessage;
+  //   return () => {
+  //     delete (window as any).sendMessage;
+  //   };
+  // }, []);
 
   React.useEffect(() => {
     if (!isPending && !session) {
@@ -169,7 +225,7 @@ const ChatBot = () => {
     }
   }, [session, isPending]);
 
-  const handleSubmit = (message: PromptInputMessage) => {
+  const handleSubmit = async (message: PromptInputMessage) => {
     // Don't allow submission if not authenticated
     if (!session) {
       toast('Please sign in to use the chatbot');
@@ -183,38 +239,34 @@ const ChatBot = () => {
       return;
     }
 
-    sendMessage(
-      {
-        text: message.text || 'Sent with attachments',
-        files: message.files,
-        metadata: {
-          userId: session?.user.id,
-        },
-      },
-      {
-        body: {
-          model: model,
-        },
-      },
-    ).catch((error) => {
-      toast(error.message);
-    }).finally(() => {
-      refreshProducts();
-    });
-
-    setInput('');
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    // Don't allow suggestions if not authenticated
-    if (!session) {
-      toast('Please sign in to use the chatbot');
+    // Prevent multiple chat creations
+    if (isCreatingChat) {
       return;
     }
 
-    sendMessage({ text: suggestion }, {
-      body: {
-        model: model,
+    // Create new chat if none exists
+    if (!currentChatId) {
+      setIsCreatingChat(true);
+      try {
+        const newChatId = await handleNewChat();
+        if (newChatId) {
+          sendUserMessage(message);
+        }
+      } finally {
+        setIsCreatingChat(false);
+      }
+      return;
+    }
+
+    sendUserMessage(message);
+  };
+
+  const sendUserMessage = (message: PromptInputMessage) => {
+    sendMessage({
+      text: message.text || 'Sent with attachments',
+      files: message.files,
+      metadata: {
+        userId: session?.user.id,
       },
     }).catch((error) => {
       toast(error.message);
@@ -225,22 +277,119 @@ const ChatBot = () => {
     setInput('');
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const handleSuggestionClick = async (suggestion: string) => {
+    // Don't allow suggestions if not authenticated
+    if (!session) {
+      toast('Please sign in to use the chatbot');
+      return;
+    }
+
+    // Prevent multiple chat creations
+    if (isCreatingChat) {
+      return;
+    }
+
+    // Create new chat if none exists
+    if (!currentChatId) {
+      setIsCreatingChat(true);
+      try {
+        const newChatId = await handleNewChat();
+        if (newChatId) {
+          sendTextMessage(suggestion);
+        }
+      } finally {
+        setIsCreatingChat(false);
+      }
+      return;
+    }
+
+    sendTextMessage(suggestion);
+    setInput('');
   };
 
-  // Filter products based on search term
-  const filteredProducts = (products || []).filter(product =>
-    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const sendTextMessage = (text: string) => {
+    sendMessage({
+      text: text,
+      metadata: {
+        userId: session?.user.id,
+      },
+    }).catch((error) => {
+      toast(error.message);
+    }).finally(() => {
+      refreshProducts();
+    });
+  };
 
-  const handleSignOut = async () => {
-    await authClient.signOut();
+  const handleNewChat = async (): Promise<string | null> => {
+    try {
+      const newSession = await createNewChat();
+      refreshChatSessions();
+      if (newSession) {
+        setCurrentChatId(newSession.id);
+        // Reset to empty messages for new chat
+        setInitialMessages([]);
+        return newSession.id;
+      }
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+      toast('Failed to create new chat');
+    }
+    return null;
+  };
+
+  const handleRenameChat = async (chatId: string, title: string) => {
+    try {
+      await renameTitleChatSession(chatId, title);
+      refreshChatSessions();
+    } catch (error) {
+      console.error('Error renaming chat:', error);
+      toast('Failed to rename chat');
+    }
+  };
+
+  const handleSummaryWithAI = async (chatId: string) => {
+    try {
+      await summaryWithAIChatSession(chatId);
+      refreshChatSessions();
+    } catch (error) {
+      console.error('Error summarizing chat:', error);
+      toast('Failed to summarize chat');
+    }
+  };
+
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      await deleteChatSession(chatId);
+      refreshChatSessions();
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      toast('Failed to delete chat');
+    }
+  };
+
+  const handleChatSelect = async (chatId: string) => {
+    setCurrentChatId(chatId);
+
+    const session = await loadChatSession(chatId);
+    if (session && session.messages.length > 0) {
+      // Set initial messages for useChat to load
+      setCurrentChatId(null);
+      setInitialMessages([]);
+      // console.log('Loaded messages for chat:', chatId, session.messages);
+
+      setTimeout(() => {
+        setCurrentChatId(chatId);
+        setInitialMessages(session.messages);
+      }, 0);
+    } else {
+      // No messages in this session, start fresh
+      setCurrentChatId(chatId);
+      setInitialMessages([]);
+    }
+  };
+
+  const handleSubmitWithChat = (message: any) => {
+    handleSubmit(message);
   };
 
   // Show loading state while checking authentication
@@ -257,527 +406,79 @@ const ChatBot = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full max-w-full overflow-hidden">
-        {/* Auth Modal - shows when user is not authenticated */}
-        <AuthModal
-          open={showAuthModal}
-          onOpenChange={(open) => {
-            // Prevent closing modal when user is not authenticated
-            if (!session) {
-              return;
-            }
-            setShowAuthModal(open);
-          }}
-        />
-
-        {/* Overlay to disable interaction when not authenticated */}
-        {!session && (
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm z-40 pointer-events-all" />
-        )}
-
-        <Sidebar className="flex-shrink-0">
-          <SidebarHeader>
-            <div className="flex items-center gap-2 p-2 justify-center">
-              <SparklesText className="text-lg font-semibold truncate">Sri Mul UMKM</SparklesText>
-            </div>
-          </SidebarHeader>
-          <SidebarContent className="overflow-y-auto">
-            {/* <SidebarGroup>
-              <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton>
-                      <BarChart3 className="w-4 h-4" />
-                      <span>Dashboard</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton isActive>
-                      <Package className="w-4 h-4" />
-                      <span>Produk</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton>
-                      <ShoppingCart className="w-4 h-4" />
-                      <span>Transaksi</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton>
-                      <TrendingUp className="w-4 h-4" />
-                      <span>Laporan</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarSeparator /> */}
-
-            <SidebarGroup className="flex-1 flex flex-col min-h-0">
-              <div className="flex items-center justify-between px-2">
-                <SidebarGroupLabel>Produk Saya</SidebarGroupLabel>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0"
-                  onClick={refreshProducts}
-                  disabled={isLoading}
-                >
-                  <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
-                </Button>
+      <AuthenticationWrapper
+        session={session}
+        showAuthModal={showAuthModal}
+        onAuthModalChange={setShowAuthModal}
+      >
+        <div className="flex h-screen w-full max-w-full overflow-hidden">
+          <Sidebar className="flex-shrink-0">
+            <SidebarHeader>
+              <div className="flex items-center gap-2 p-2 justify-center">
+                <h1 className="text-lg font-bold font-[Lilita_One] text-[#fb8500] tracking-widest text-shadow-sm">SRI MUL</h1>
               </div>
-              <SidebarGroupContent className="flex-1 flex flex-col min-h-0">
+            </SidebarHeader>
+
+            <SidebarContent className="overflow-y-auto">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
                 <div className="px-2 pb-2 flex-shrink-0">
-                  <Input
-                    placeholder="Cari produk..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-8 w-full"
+                  <TabsList className="grid w-full grid-cols-2">
+                    {sidebarTabs.map(tab => (
+                      <TabsTrigger key={tab.value} value={tab.value} className="flex items-center gap-2">
+                        <tab.icon className="w-4 h-4" />
+                        {tab.name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </div>
+
+                <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 mt-0">
+                  <ChatSidebar
+                    onChatSelect={handleChatSelect}
+                    onNewChat={handleNewChat}
+                    onDeleteChat={handleDeleteChat}
+                    onSummaryWithAI={handleSummaryWithAI}
+                    onRenameChat={handleRenameChat}
+                    selectedChatId={currentChatId}
+                    chatSessions={chatSessions}
+                    isLoading={chatHistoryLoading}
+                    error={chatHistoryError}
                   />
-                </div>
+                </TabsContent>
 
-                <div className="space-y-2 px-2 flex-1 min-h-0 overflow-y-auto">
-                  {isLoading && (
-                    <div className="flex items-center justify-center py-4">
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span className="ml-2 text-sm text-muted-foreground">Loading products...</span>
-                    </div>
-                  )}
+                <TabsContent value="produk" className="flex-1 flex flex-col min-h-0 mt-0">
+                  <ProductSidebar />
+                </TabsContent>
+              </Tabs>
+            </SidebarContent>
 
-                  {isError && (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-red-600">Failed to load products</p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="mt-2"
-                        onClick={refreshProducts}
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Retry
-                      </Button>
-                    </div>
-                  )}
+            <SidebarFooter className="hidden md:block">
+              <UserProfileDropdown session={session} variant="desktop" />
+            </SidebarFooter>
+          </Sidebar>
 
-                  {!isLoading && !isError && filteredProducts.length === 0 && (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground">
-                        {searchTerm ? 'No products found' : 'No products yet'}
-                      </p>
-                    </div>
-                  )}
+          <SidebarInset className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <MobileHeader session={session} />
 
-                  {filteredProducts.map((product) => (
-                    <Card key={product.id} className="p-3 w-full">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium line-clamp-1 flex-1 min-w-0">{product.name}</h4>
-                          <Badge
-                            variant={product.isLowStock ? "destructive" : "secondary"}
-                            className="text-xs flex-shrink-0 ml-2"
-                          >
-                            {product.currentStock || 0}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium truncate flex-1 min-w-0">{product.formattedSellingPrice}</span>
-                          <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">{product.category}</Badge>
-                        </div>
-                        {product.isLowStock && (
-                          <p className="text-xs text-red-600">Stok rendah!</p>
-                        )}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarFooter className="hidden md:block">
-                <div className="flex items-center gap-2 p-2 overflow-hidden">
-                  <Avatar className="w-8 h-8 flex-shrink-0">
-                    <AvatarImage src={session?.user?.image || 'https://github.com/shadcn.png'} alt={session?.user?.name || 'User'} />
-                    <AvatarFallback>CN</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-sm min-w-0">
-                    <p className="font-medium truncate">{session?.user?.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
-                  </div>
-                </div>
-              </SidebarFooter>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-56 rounded-lg"
-              side="right"
-              align="end"
-              sideOffset={4}
-            >
-              <DropdownMenuLabel className="p-0 font-normal">
-                <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={session?.user?.image || 'https://github.com/shadcn.png'} alt={session?.user?.name || 'User'} />
-                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
-                    <span className="truncate font-medium">{session?.user?.name || 'User'}</span>
-                    <span className="text-muted-foreground truncate text-xs">
-                      {session?.user?.email || 'user@example.com'}
-                    </span>
-                  </div>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                {/* <DropdownMenuItem>
-                  <IconUserCircle />
-                  Account
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <IconCreditCard />
-                  Billing
-                </DropdownMenuItem> */}
-                {/* <DropdownMenuItem>
-                  <IconNotification />
-                  Notifications
-                </DropdownMenuItem> */}
-              </DropdownMenuGroup>
-              {/* <DropdownMenuSeparator /> */}
-              <DropdownMenuItem onClick={handleSignOut}>
-                <IconLogout />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Sidebar>
-
-        <SidebarInset className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          {/* Header with sidebar trigger for mobile */}
-          <header className="flex h-16 md:h-0 items-center gap-4 px-4 flex-shrink-0">
-            <SidebarTrigger className="md:hidden" />
-            <SparklesText className="text-xl font-semibold md:hidden truncate">Sri Mul UMKM</SparklesText>
-            <div className="flex-1" />
-            {/* Mobile avatar in bottom left area */}
-            <div className="md:hidden fixed bottom-4 left-4 z-50">
-              <Avatar className="w-10 h-10 border-2 border-white shadow-lg">
-                <AvatarImage src={session?.user?.image || 'https://github.com/shadcn.png'} />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
-            </div>
-          </header>
-
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-            <Conversation className="flex-1 min-h-0 overflow-hidden z-2">
-              <Ripple
-                className='z-1'
-                mainCircleSize={300}
-                mainCircleOpacity={0.3}
-                numCircles={8}
-                circleColor="#10b981"
-                borderColor="#059669"
-                backgroundColor="#10b981"
-                gradient={{
-                  from: "#10b981",
-                  to: "rgba(16, 185, 129, 0)",
-                  direction: "to_bottom"
-                }}
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <ConversationArea
+                messages={messages}
+                status={status === 'streaming' ? 'in_progress' : 'awaiting_message'}
               />
-              <ConversationContent className="px-4 overflow-y-auto">
-                {messages.map((message) => (
-                  <div key={message.id} className="w-full max-w-full">
-                    {message.role === 'assistant' && message.parts.filter((part) => part.type === 'source-url').length > 0 && (
-                      <Sources>
-                        <SourcesTrigger
-                          count={
-                            message.parts.filter(
-                              (part) => part.type === 'source-url',
-                            ).length
-                          }
-                        />
-                        {message.parts.filter((part) => part.type === 'source-url').map((part, i) => (
-                          <SourcesContent key={`${message.id}-${i}`}>
-                            <Source
-                              key={`${message.id}-${i}`}
-                              href={part.url}
-                              title={part.url}
-                            />
-                          </SourcesContent>
-                        ))}
-                      </Sources>
-                    )}
-                    {message.parts.map((part, i) => {
-                      switch (part.type) {
-                        case 'text':
-                          return (
-                            <Fragment key={`${message.id}-${i}`}>
-                              <Message from={message.role} className="w-full max-w-full">
-                                <MessageContent className="w-full max-w-full overflow-hidden">
-                                  <Response className="w-full max-w-full break-words">
-                                    {part.text}
-                                  </Response>
-                                </MessageContent>
-                              </Message>
-                              {message.role === 'assistant' && i === messages.length - 1 && (
-                                <Actions className="mt-2">
-                                </Actions>
-                              )}
-                            </Fragment>
-                          );
-                        case 'reasoning':
-                          return (
-                            <Reasoning
-                              key={`${message.id}-${i}`}
-                              className="w-full max-w-full"
-                              isStreaming={status === 'streaming' && i === message.parts.length - 1 && message.id === messages.at(-1)?.id}
-                            >
-                              <ReasoningTrigger />
-                              <ReasoningContent className="break-words">{part.text}</ReasoningContent>
-                            </Reasoning>
-                          );
-                        case 'tool-addProduct':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={64} /> tambah produk...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full">
-                                  <AddProduct {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-deleteProduct':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={64} /> hapus produk...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full">
-                                  <DeleteProduct {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-updateProduct':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={64} /> update produk...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full">
-                                  <UpdateProduct {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-listProduct':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> list produk...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full overflow-x-auto">
-                                  <ListProduct data={part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-getDailySales':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> list penjualan...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full overflow-x-auto">
-                                  <GetDailySales {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-getMonthlySales':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> list penjualan bulanan...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full overflow-x-auto">
-                                  <GetMonthlySales {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-getTotalRevenue':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> total penjualan...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full overflow-x-auto">
-                                  <GetTotalRevenue {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-recordTransaction':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> record transaksi...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full overflow-x-auto">
-                                  <RecordTransaction {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-listTransaction':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> list transaksi...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full overflow-x-auto">
-                                  <ListTransaction {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-compareMonthlySales':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> perbandingan penjualan...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full overflow-x-auto">
-                                  <CompareMonthlySales {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-createPaymentLink':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> membuat link pembayaran...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full">
-                                  <CreatePaymentLink {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        case 'tool-checkPaymentStatus':
-                          switch (part.state) {
-                            case 'input-available':
-                              return <div key={i} className="flex items-center gap-2 w-full"> <Spinner className="text-blue-500" size={24} /> status pembayaran...</div>;
-                            case 'output-available':
-                              return (
-                                <div key={i} className="w-full max-w-full">
-                                  <CheckPaymentStatus {...part.output as any} />
-                                </div>
-                              );
-                            case 'output-error':
-                              return <div key={i} className="w-full break-words">Error: {part.errorText}</div>;
-                            default:
-                              return null;
-                          }
-                        default:
-                          return null;
-                      }
-                    })}
-                  </div>
-                ))}
-                {status === 'submitted' && <Loader />}
-              </ConversationContent>
-              <ConversationScrollButton />
-            </Conversation>
 
-            <div className="flex-shrink-0 bg-background border-t p-4 space-y-3">
-              <div className="overflow-x-auto">
-                <Suggestions className="mb-0">
-                  {suggestions.map((suggestion) => (
-                    <Suggestion
-                      key={suggestion}
-                      onClick={handleSuggestionClick}
-                      suggestion={suggestion}
-                      className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
-                    />
-                  ))}
-                </Suggestions>
-              </div>
-              <PromptInput onSubmit={handleSubmit} globalDrop multiple className="w-full">
-                <PromptInputBody className="w-full">
-                  <PromptInputAttachments>
-                    {(attachment) => <PromptInputAttachment data={attachment} />}
-                  </PromptInputAttachments>
-                  <PromptInputTextarea
-                    onChange={(e) => setInput(e.target.value)}
-                    value={input}
-                    className="w-full resize-none"
-                  />
-                </PromptInputBody>
-                <PromptInputToolbar className="flex-wrap gap-2 w-full">
-                  <PromptInputTools className="flex-1 min-w-0">
-                    <PromptInputActionMenu>
-                      <PromptInputActionMenuTrigger />
-                      <PromptInputActionMenuContent>
-                        <PromptInputActionAddAttachments />
-                      </PromptInputActionMenuContent>
-                    </PromptInputActionMenu>
-                    <PromptInputButton
-                      onClick={() => setUseMicrophone(!useMicrophone)}
-                      variant={useMicrophone ? 'default' : 'ghost'}
-                      className="p-2"
-                    >
-                      <MicIcon size={14} className="sm:w-4 sm:h-4" />
-                      <span className="sr-only">Microphone</span>
-                    </PromptInputButton>
-                  </PromptInputTools>
-                  <PromptInputSubmit disabled={!input && !status} status={status} className="ml-2 flex-shrink-0" />
-                </PromptInputToolbar>
-              </PromptInput>
+              <ChatInput
+                onSubmit={handleSubmitWithChat}
+                onSuggestionClick={handleSuggestionClick}
+                input={input}
+                setInput={setInput}
+                session={session}
+                status={status === 'streaming' ? 'in_progress' : 'awaiting_message'}
+                suggestions={suggestions}
+              />
             </div>
-          </div>
-        </SidebarInset>
-      </div>
+          </SidebarInset>
+        </div>
+      </AuthenticationWrapper>
     </SidebarProvider>
   );
 };

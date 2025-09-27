@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   // });
 
   const result = streamText({
-    model: models[0].value,
+    model: models[1].value,
     providerOptions: {
       gateway: {
         order: ["bedrock"] 

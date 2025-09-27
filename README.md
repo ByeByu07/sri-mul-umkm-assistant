@@ -200,3 +200,9 @@ Meringkas chat untuk mengkalkulasikan income dan expense untuk setiap sesi chat.
 
 Menggunakan model IBM Granite 20B Instruct 8K
 
+<img width="2034" height="2610" alt="carbon" src="https://github.com/user-attachments/assets/46ebdc11-f189-4ba7-9e88-17eb1b54fbbe" />
+Implementasi kode pada ai summary di route api/chat-history/[id]/route.ts
+
+
+Propmt disesuaikan agar dapat meneyesuaikan dengan format data yang diberikan, berupa json dari database.
+

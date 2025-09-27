@@ -33,9 +33,11 @@ export async function POST(req: Request) {
   const {
     messages,
     id,
+    model,
   }: {
     messages: UIMessage[];
     id?: string;
+    model?: string;
   } = await req.json();
 
   const chatId = id;

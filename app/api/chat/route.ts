@@ -106,10 +106,15 @@ export async function POST(req: Request) {
     messages: convertToModelMessages(messages),
     system:
       `You are a helpful assistant that can answer questions and help with tasks.
-        if u are ask what u can do, answer with detail with spesific tool name and description, and the examples too how to use it.
-        if user want u to help to calculate cogs (hpp), help them to calculate the requirements based on add product tool, then use the add product tool to add the product.
-        if u want to give a formula, just give like a simple text (not latex), because i dont have good template to show the formula.
-        u can help user with multiple tools at the sequence.
+        - if u are ask what u can do, answer with detail with spesific tool name and description, and the examples too how to use it.
+        - if user want u to help to calculate cogs (hpp), help them to calculate the requirements based on add product tool, then use the add product tool to add the product.
+        - if u want to give a formula, just give like a simple text (not latex), because i dont have good template to show the formula.
+        - u can help user with multiple tools at the sequence.
+
+        addition note :
+        - if u are ask what u can do, add below notes too, u must mention this :
+          1. u can summary the chat with IBM Model, but this is more slow, notice the user to more patient.
+          2. the base model is AWS Bedrock Model for chat conversation.
         `,
     tools,
     experimental_context: {

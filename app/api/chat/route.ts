@@ -33,9 +33,11 @@ export async function POST(req: Request) {
   const {
     messages,
     id,
+    model,
   }: {
     messages: UIMessage[];
     id?: string;
+    model?: string;
   } = await req.json();
 
   const chatId = id;
@@ -106,7 +108,7 @@ export async function POST(req: Request) {
   // });
 
   const result = streamText({
-    model: models[0].value,
+    model: model || models[0].value,
     providerOptions: {
       gateway: {
         order: ["bedrock"] 

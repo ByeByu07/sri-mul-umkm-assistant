@@ -63,7 +63,7 @@ import {
 import { Loader } from '@/components/ai-elements/loader';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { authClient } from '@/lib/auth-client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Ripple } from "@/components/ui/ripple";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -128,6 +128,10 @@ import { useUIState } from '@ai-sdk/rsc';
 
 const models = [
   {
+    name: 'OpenAI GPT OSS 120B',
+    value: 'openai/gpt-oss-120b',
+  },
+  {
     name: 'GPT 4o',
     value: 'openai/gpt-4o',
   },
@@ -170,10 +174,74 @@ const ChatBot = () => {
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URL parameter handling for model
+  React.useEffect(() => {
+    const modelFromUrl = searchParams.get('model');
+    
+    if (modelFromUrl) {
+      // Validate if the model exists in your models array
+      const validModel = models.find(m => m.value === modelFromUrl);
+      if (validModel) {
+        setModel(modelFromUrl);
+        console.log('Model set from URL:', modelFromUrl);
+        toast(`Using model: ${validModel.name}`);
+      } else {
+        console.warn('Invalid model from URL:', modelFromUrl);
+        toast(`Invalid model "${modelFromUrl}". Using default model.`);
+      }
+    }
+  }, [searchParams]);
+
+  // Function to update model and URL
+  const handleModelChange = (newModel: string) => {
+    setModel(newModel);
+    
+    // Create new URL with updated model parameter
+    const params = new URLSearchParams(searchParams);
+    params.set('model', newModel);
+    
+    // Update URL without page reload
+    router.replace(`?${params.toString()}`, { scroll: false });
+    
+    // Optional: Show notification
+    const modelName = models.find(m => m.value === newModel)?.name || newModel;
+    toast(`Switched to model: ${modelName}`);
+  };
+
+  // Function to get available models with validation
+  const getAvailableModels = () => {
+    return models.map(model => ({
+      ...model,
+      available: true // You can add logic here to check model availability
+    }));
+  };
+
+  // Function to get current model info
+  const getCurrentModelInfo = () => {
+    return models.find(m => m.value === model) || models[0];
+  };
+
+  // Debug function to log current state (for development)
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Current model state:', {
+        model,
+        urlParam: searchParams.get('model'),
+        modelInfo: getCurrentModelInfo()
+      });
+    }
+  }, [model, searchParams]);
+
   // Initialize useChat with proper messages
   const { messages, sendMessage, status, stop } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
+      body: {
+        model: model,
+      },
     }),
     messages: initialMessages,
     id: currentChatId || undefined,
@@ -313,7 +381,7 @@ const ChatBot = () => {
       metadata: {
         userId: session?.user.id,
       },
-    }).catch((error) => {
+    },).catch((error) => {
       toast(error.message);
     }).finally(() => {
       refreshProducts();

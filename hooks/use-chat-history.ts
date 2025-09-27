@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { UIMessage } from 'ai';
+import { authClient } from '@/lib/auth-client';
 
 export interface ChatSession {
   id: string;
@@ -40,6 +41,8 @@ export function useChatHistory(): UseChatHistoryReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { data: session, isPending } = authClient.useSession();
+
   // Fetch all chat sessions
   const fetchChatSessions = useCallback(async () => {
     try {
@@ -55,9 +58,14 @@ export function useChatHistory(): UseChatHistoryReturn {
       const data = await response.json();
       setChatSessions(data.chatSessions || []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui';
       setError(errorMessage);
-      toast(`Error fetching chat sessions: ${errorMessage}`);
+
+      if (!session) {
+        toast(`Gagal memuat riwayat chat. Coba login terlebih dahulu`);
+      } else {
+        toast(`Gagal memuat riwayat chat: ${errorMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +76,7 @@ export function useChatHistory(): UseChatHistoryReturn {
     try {
       setError(null);
 
-      const chatTitle = title || `New Chat ${new Date().toLocaleDateString()}`;
+      const chatTitle = title || `Chat Baru ${new Date().toLocaleDateString()}`;
 
       const response = await fetch('/api/chat-history', {
         method: 'POST',
@@ -94,12 +102,12 @@ export function useChatHistory(): UseChatHistoryReturn {
         messages: [],
       });
 
-      toast('New chat created successfully');
+      toast('Chat baru berhasil dibuat');
       return newSession;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui';
       setError(errorMessage);
-      toast(`Error creating new chat: ${errorMessage}`);
+      toast(`Gagal membuat chat baru: ${errorMessage}`);
       return null;
     }
   }, []);
@@ -125,9 +133,9 @@ export function useChatHistory(): UseChatHistoryReturn {
       setCurrentSession(sessionWithMessages);
       return sessionWithMessages;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui';
       setError(errorMessage);
-      toast(`Error loading chat: ${errorMessage}`);
+      toast(`Gagal memuat chat: ${errorMessage}`);
       return null;
     } finally {
       setIsLoading(false);
@@ -173,9 +181,9 @@ export function useChatHistory(): UseChatHistoryReturn {
 
       return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui';
       setError(errorMessage);
-      toast(`Error saving chat: ${errorMessage}`);
+      toast(`Gagal menyimpan chat: ${errorMessage}`);
       return false;
     } finally {
       setIsLoading(false);
@@ -204,12 +212,12 @@ export function useChatHistory(): UseChatHistoryReturn {
         setCurrentSession(null);
       }
 
-      toast('Chat deleted successfully');
+      toast('Chat berhasil dihapus');
       return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui';
       setError(errorMessage);
-      toast(`Error deleting chat: ${errorMessage}`);
+      toast(`Gagal menghapus chat: ${errorMessage}`);
       return false;
     } finally {
       setIsLoading(false);
@@ -238,12 +246,12 @@ export function useChatHistory(): UseChatHistoryReturn {
         session.id === id ? { ...session, title } : session
       ));
 
-      toast('Chat title renamed successfully');
+      toast('Judul chat berhasil diubah');
       return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui';
       setError(errorMessage);
-      toast(`Error renaming chat: ${errorMessage}`);
+      toast(`Gagal mengubah judul chat: ${errorMessage}`);
       return false;
     } finally {
       setIsLoading(false);
@@ -276,12 +284,12 @@ export function useChatHistory(): UseChatHistoryReturn {
         session.id === id ? { ...session, summary: data.chatSession.summary } : session
       ));
 
-      toast('Summary with AI created successfully');
+      toast('Ringkasan dengan AI berhasil dibuat');
       return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan yang tidak diketahui';
       setError(errorMessage);
-      toast(`Error renaming chat: ${errorMessage}`);
+      toast(`Gagal membuat ringkasan: ${errorMessage}`);
       return false;
     } finally {
       setIsLoading(false);

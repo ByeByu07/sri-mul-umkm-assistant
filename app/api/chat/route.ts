@@ -36,9 +36,6 @@ export async function POST(req: Request) {
 
   const chatId = id;
 
-  console.log("chatId server", chatId);
-  console.log("messages server", messages);
-
   const session: Session | null = await auth.api.getSession({ headers: req.headers })
 
   if (!session?.user?.id) {

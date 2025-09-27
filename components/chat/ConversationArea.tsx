@@ -106,7 +106,7 @@ export function ConversationArea({ messages, status, className }: ConversationAr
                           from={message.role}
                           className={`w-fit max-w-[80%] ${message.role === 'user'
                             ? 'text-white ml-auto'
-                            : 'bg-gray-100 text-gray-900 mr-auto'
+                            : 'bg-gray-100 text-gray-900 mr-auto px-3 rounded-lg'
                             }`}
                         >
                           <MessageContent className="w-full max-w-full overflow-hidden">

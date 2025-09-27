@@ -472,7 +472,7 @@ const ChatBot = () => {
                 input={input}
                 setInput={setInput}
                 session={session}
-                status={status === 'streaming' ? 'in_progress' : 'awaiting_message'}
+                status={status}
                 suggestions={suggestions}
               />
             </div>

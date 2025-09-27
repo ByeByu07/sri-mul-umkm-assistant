@@ -13,6 +13,7 @@ import {
   PromptInputButton,
   type PromptInputMessage,
   PromptInputSubmit,
+  PromptInputSubmitProps,
   PromptInputTextarea,
   PromptInputToolbar,
   PromptInputTools,
@@ -36,7 +37,7 @@ interface ChatInputProps {
   input: string;
   setInput: (value: string) => void;
   session: UserSession | null;
-  status: string;
+  status: PromptInputSubmitProps['status'];
   suggestions?: string[];
   className?: string;
 }
@@ -94,6 +95,7 @@ export function ChatInput({
               onClick={onSuggestionClick}
               suggestion={suggestion}
               className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+              disabled={status === 'streaming' || status === 'submitted'}
             />
           ))}
         </Suggestions>

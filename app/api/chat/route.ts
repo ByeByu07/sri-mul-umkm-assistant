@@ -11,6 +11,10 @@ export const maxDuration = 30;
 
 const models = [
   {
+    name: 'OpenAI GPT OSS 120B',
+    value: 'openai/gpt-oss-120b',
+  },
+  {
     name: 'GPT 4o',
     value: 'openai/gpt-4o',
   },
@@ -103,18 +107,23 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: models[0].value,
+    providerOptions: {
+      gateway: {
+        order: ["bedrock"] 
+      }
+    },
     messages: convertToModelMessages(messages),
     system:
       `You are a helpful assistant that can answer questions and help with tasks.
-        - if u are ask what u can do, answer with detail with spesific tool name and description, and the examples too how to use it.
+        - if u are ask what u can do, answer with detail with spesific tool name and description, and the examples too how to use it, dont make technical answer.
         - if user want u to help to calculate cogs (hpp), help them to calculate the requirements based on add product tool, then use the add product tool to add the product.
         - if u want to give a formula, just give like a simple text (not latex), because i dont have good template to show the formula.
         - u can help user with multiple tools at the sequence.
 
         addition note :
         - if u are ask what u can do, add below notes too, u must mention this :
-          1. u can summary the chat with IBM Model, but this is more slow, notice the user to more patient.
-          2. the base model is AWS Bedrock Model for chat conversation.
+          1. u can summary the chat with IBM granite-20b-code-instruct-8k Model, but this is more slow, notice the user to more patient.
+          2. the base model is OpenAI GPT OSS 120B from AWS Bedrock Model for chat conversation.
         `,
     tools,
     experimental_context: {
@@ -173,7 +182,7 @@ export async function POST(req: Request) {
   // send sources and reasoning back to the client
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
-    // sendSources: true,
-    // sendReasoning: true,
+    sendSources: true,
+    sendReasoning: true,
   });
 }

@@ -97,17 +97,65 @@ export async function PUT(
 
     let summaryResult = "";
     if (summary) {
+
+      console.log("foundChatSession.messages", foundChatSession.messages);
+
       const replicate = new Replicate({
         auth: process.env.REPLICATE_API_TOKEN,
       });
 
       const input = {
         top_p: 0.9,
-        prompt: `You are the summary of this chat session: ${foundChatSession.messages}`,
+        prompt: `You are a structured extractor and summarizer.  
+Your task: process the following chat session messages:  
+${foundChatSession.messages}  
+
+--------------------------------------------------  
+
+Instructions:  
+
+1. Look for all objects where "toolName": "recordTransaction".  
+   Example structure:  
+   {
+     "type": "tool-result",
+     "toolCallId": "call_12345",
+     "toolName": "recordTransaction",
+     "result": {
+       "success": true,
+       "transaction": {
+         "id": "uuid",
+         "type": "expense" | "income",
+         "amount": 10000,
+         "description": "Biaya operasional",
+         "transactionDate": "2025-09-27T02:39:20.451Z"
+       }
+     }
+   }
+
+2. From each "transaction", extract:  
+   - type (income or expense)  
+   - amount  
+   - description  
+
+3. Sum all amounts grouped by type:  
+   - If type = "income", add to pendapatan  
+   - If type = "expense", add to pengeluaran  
+
+4. Output the result in this exact format:  
+
+   - pendapatan: <total income sum>  
+   - pengeluaran: <total expense sum>  
+   - deskripsi: list each transaction in the format:  
+     "<type> - <amount> - <description>"  
+
+--------------------------------------------------  
+
+Only return the clean structured summary, nothing else. 
+        `,
         max_tokens: 512,
         min_tokens: 0,
         temperature: 0.6,
-        system_prompt: "You are an expert in summarizing chat sessions.",
+        system_prompt: "You are an expert in summarizing and extracting information from chat sessions.",
         presence_penalty: 0,
         frequency_penalty: 0
       };

@@ -128,7 +128,7 @@ import { useUIState } from '@ai-sdk/rsc';
 
 const models = [
   {
-    name: 'OpenAI GPT OSS 120B',
+    name: 'OpenAI GPT OSS 120B (AWS)',
     value: 'openai/gpt-oss-120b',
   },
   {
@@ -481,6 +481,9 @@ const ChatBot = () => {
                 session={session}
                 status={status}
                 suggestions={suggestions}
+                models={models}
+                onModelChange={setModel}
+                model={model}
               />
             </div>
           </SidebarInset>

@@ -8,6 +8,9 @@ import { QueryProvider } from "@/components/providers/query-provider";
 export const metadata: Metadata = {
   title: "Sri Mul - UMKM Chatbot",
   description: "UMKM chatbot assistant, mudah dan tepat",
+  other: {
+   'dicoding:email' :'muhammadbaharuddin08123@gmail.com' 
+  }
 };
 
 export default async function RootLayout({
@@ -19,6 +22,9 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <meta name="dicoding:email" content="muhammadbaharuddin08123@gmail.com" />
+      </head>
       <body
         className={`antialiased`}
       >

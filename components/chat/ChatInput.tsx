@@ -17,6 +17,11 @@ import {
   PromptInputTextarea,
   PromptInputToolbar,
   PromptInputTools,
+  PromptInputModelSelect,
+  PromptInputModelSelectContent,
+  PromptInputModelSelectItem,
+  PromptInputModelSelectTrigger,
+  PromptInputModelSelectValue,
 } from '@/components/ai-elements/prompt-input';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { useMicrophone } from '@/hooks/use-microphone';
@@ -35,6 +40,9 @@ interface ChatInputProps {
   onSubmit: (message: PromptInputMessage) => void;
   onSuggestionClick: (suggestion: string) => void;
   input: string;
+  model: string;
+  models: { name: string; value: string }[];
+  onModelChange: (model: string) => void;
   setInput: (value: string) => void;
   session: UserSession | null;
   status: PromptInputSubmitProps['status'];
@@ -57,6 +65,9 @@ export function ChatInput({
   onSubmit,
   onSuggestionClick,
   input,
+  model,
+  models,
+  onModelChange,
   setInput,
   session,
   status,
@@ -145,6 +156,24 @@ export function ChatInput({
                 <span className="sr-only">{isRecording ? 'Stop recording' : 'Start voice input'}</span>
               </PromptInputButton>
             )}
+            <PromptInputModelSelect
+                onValueChange={(value) => { 
+                  onModelChange(value);
+                  console.log("value", value);
+                }}
+                value={model}
+              >
+                <PromptInputModelSelectTrigger>
+                  <PromptInputModelSelectValue />
+                </PromptInputModelSelectTrigger>
+                <PromptInputModelSelectContent>
+                  {models.map((model) => (
+                    <PromptInputModelSelectItem key={model.value} value={model.value}>
+                      {model.name}
+                    </PromptInputModelSelectItem>
+                  ))}
+                </PromptInputModelSelectContent>
+              </PromptInputModelSelect>
           </PromptInputTools>
           <PromptInputSubmit disabled={!input && !status} status={status} className="ml-2 flex-shrink-0" />
         </PromptInputToolbar>

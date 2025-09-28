@@ -40,6 +40,9 @@ export async function POST(req: Request) {
     model?: string;
   } = await req.json();
 
+
+  const _model = model || models[0].value;
+
   const chatId = id;
 
   const session: Session | null = await auth.api.getSession({ headers: req.headers })
@@ -108,7 +111,7 @@ export async function POST(req: Request) {
   // });
 
   const result = streamText({
-    model: models[1].value,
+    model: _model,
     providerOptions: {
       gateway: {
         order: ["bedrock"] 
@@ -124,8 +127,8 @@ export async function POST(req: Request) {
 
         addition note :
         - if u are ask what u can do, add below notes too, u must mention this :
-          1. u can summary the chat with IBM granite-20b-code-instruct-8k Model, but this is more slow, notice the user to more patient.
-          2. the base model is OpenAI GPT OSS 120B from AWS Bedrock Model for chat conversation.
+          1. u can summary the chat with IBM granite-20b-code-instruct-8k Model, but this is more slow, notice the user to more patient and user can use the summary ai in chat history, in each of chat seesion, in horizontal dot three button next to the chat session title.
+          2. the base model that user can select is OpenAI GPT OSS 120B from AWS Bedrock  / GPT 4o / Deepseek R1 for chat conversation.
         `,
     tools,
     experimental_context: {

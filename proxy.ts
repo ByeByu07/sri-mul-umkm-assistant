@@ -5,7 +5,7 @@ import { betterFetch } from '@better-fetch/fetch'
 
 type Session = typeof auth.$Infer.Session;
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
 
     const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
 		baseURL: request.nextUrl.origin,
